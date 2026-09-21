@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agentic GraphRAG Benchmark Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #333; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .metric { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px; }
+        .metric h3 { margin: 0; color: #666; font-size: 14px; }
+        .metric .value { font-size: 36px; font-weight: bold; margin: 10px 0; }
+        .metric .value.winner { color: #28a745; }
+        .metric .value.secondary { color: #007bff; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #f8f9fa; }
+        .bar { height: 20px; background: #007bff; border-radius: 4px; }
+        .bar.winner { background: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agentic GraphRAG Benchmark Results</h1>
+        <p>Dataset: Olympics Corpus (2,951 documents) | Questions: 71/100 | Model: Gemini 3.5 Flash Lite</p>
+        
+        <div class="card">
+            <h2>Accuracy Comparison</h2>
+            <div class="metric-grid">
+                <div class="metric">
+                    <h3>LLM-Only</h3>
+                    <div class="value">44.6%</div>
+                    <p>29/65 correct</p>
+                </div>
+                <div class="metric">
+                    <h3>RAG</h3>
+                    <div class="value secondary">52.9%</div>
+                    <p>36/68 correct</p>
+                </div>
+                <div class="metric">
+                    <h3>GraphRAG</h3>
+                    <div class="value">36.9%</div>
+                    <p>24/65 correct</p>
+                </div>
+                <div class="metric">
+                    <h3>Agentic GraphRAG</h3>
+                    <div class="value winner">61.8%</div>
+                    <p>42/68 correct</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Visual Comparison</h2>
+            <table>
+                <tr><th>Pipeline</th><th>Accuracy</th><th>Bar</th></tr>
+                <tr>
+                    <td>LLM-Only</td>
+                    <td>44.6%</td>
+                    <td><div class="bar" style="width: 44.6%"></div></td>
+                </tr>
+                <tr>
+                    <td>RAG</td>
+                    <td>52.9%</td>
+                    <td><div class="bar" style="width: 52.9%"></div></td>
+                </tr>
+                <tr>
+                    <td>GraphRAG</td>
+                    <td>36.9%</td>
+                    <td><div class="bar" style="width: 36.9%"></div></td>
+                </tr>
+                <tr>
+                    <td><strong>Agentic GraphRAG</strong></td>
+                    <td><strong>61.8%</strong></td>
+                    <td><div class="bar winner" style="width: 61.8%"></div></td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Key Findings</h2>
+            <ul>
+                <li><strong>Agentic GraphRAG outperforms all other approaches</strong> by 9-25 percentage points</li>
+                <li><strong>Agentic planning</strong> with entity linking, temporal resolution, and evidence evaluation improves accuracy</li>
+                <li><strong>Simple GraphRAG</strong> without agentic reasoning performs worst (36.9%)</li>
+                <li><strong>RAG</strong> with structured data extraction performs reasonably (52.9%)</li>
+                <li><strong>LLM-Only</strong> baseline is 44.6%</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>Architecture</h2>
+            <p>The Agentic GraphRAG system uses a plan-execute-evaluate-replan loop with:</p>
+            <ul>
+                <li>Entity linking to extract and link entities to graph</li>
+                <li>Temporal reference resolution ("held immediately before 2016" -> 2012)</li>
+                <li>Type-aware action sequences (temporal, aggregation, superlative, etc.)</li>
+                <li>Evidence prioritization in synthesis</li>
+                <li>Iterative evidence sufficiency evaluation</li>
+            </ul>
+        </div>
+
+        <p style="color: #666; font-size: 12px;">Note: 71/100 questions completed due to API rate limits. Full results pending.</p>
+    </div>
+</body>
+</html>

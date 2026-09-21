@@ -1,0 +1,30 @@
+{
+  "summary": {
+    "questions_completed": 71,
+    "questions_total": 100,
+    "model": "gemini-3.5-flash-lite",
+    "corpus_size": 2951
+  },
+  "pipelines": {
+    "llm_only": {
+      "correct": 29,
+      "total": 65,
+      "accuracy": 0.446
+    },
+    "rag": {
+      "correct": 36,
+      "total": 68,
+      "accuracy": 0.529
+    },
+    "graphrag": {
+      "correct": 24,
+      "total": 65,
+      "accuracy": 0.369
+    },
+    "agentic_graphrag": {
+      "correct": 42,
+      "total": 68,
+      "accuracy": 0.618
+    }
+  }
+}
