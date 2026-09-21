@@ -1,6 +1,5 @@
 import os
 import time
-import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,13 +31,10 @@ TEMPERATURE = 0.0
 MAX_RETRIES = 3
 RETRY_DELAY = 10
 
-# Track key usage for rotation
 _key_indices = {"groq": 0, "gemini": 0, "openai": 0}
-_key_health = {"groq": {}, "gemini": {}, "openai": {}}
 
 
 def _get_keys(provider: str):
-    """Get list of API keys for provider."""
     if provider == "groq":
         return GROQ_API_KEYS
     elif provider == "gemini":
@@ -65,7 +61,6 @@ def _get_model(provider: str):
 
 
 def _get_client_for_key(provider: str, api_key: str):
-    """Create client for specific API key."""
     from openai import OpenAI
     base_url = _get_base_url(provider)
     if base_url:
@@ -73,35 +68,7 @@ def _get_client_for_key(provider: str, api_key: str):
     return OpenAI(api_key=api_key)
 
 
-def _rotate_key(provider: str):
-    """Rotate to next available key for provider."""
-    keys = _get_keys(provider)
-    if len(keys) <= 1:
-        return None
-    idx = _key_indices[provider]
-    # Try next key
-    for i in range(1, len(keys)):
-        next_idx = (idx + i) % len(keys)
-        if _key_health[provider].get(keys[next_idx], 0) < 3:  # Max 3 failures
-            _key_indices[provider] = next_idx
-            print(f"  [Key rotation] {provider}: switched to key #{next_idx + 1}")
-            return keys[next_idx]
-    return None
-
-
-def _mark_key_failure(provider: str, api_key: str):
-    """Track key failures for health checking."""
-    _key_health[provider][api_key] = _key_health[provider].get(api_key, 0) + 1
-
-
-def _mark_key_success(provider: str, api_key: str):
-    """Reset failure count on success."""
-    if api_key in _key_health[provider]:
-        _key_health[provider][api_key] = 0
-
-
 def get_openai_client():
-    """Get OpenAI-compatible client with current key."""
     keys = _get_keys(LLM_PROVIDER)
     if not keys:
         raise ValueError(f"No API keys for {LLM_PROVIDER}. Set GROQ_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY in .env")
@@ -114,7 +81,7 @@ def get_model_name():
 
 
 def llm_completion(messages, temperature=0.0, max_tokens=500, response_format=None):
-    """LLM completion with key rotation on rate limits."""
+    """LLM completion with automatic key rotation on rate limits."""
     provider = LLM_PROVIDER
     keys = _get_keys(provider)
     if not keys:
@@ -132,7 +99,6 @@ def llm_completion(messages, temperature=0.0, max_tokens=500, response_format=No
     if response_format:
         kwargs["response_format"] = response_format
 
-    # Try each key up to MAX_RETRIES times
     for key_attempt in range(len(keys)):
         current_key = keys[key_idx]
         client = _get_client_for_key(provider, current_key)
@@ -140,7 +106,6 @@ def llm_completion(messages, temperature=0.0, max_tokens=500, response_format=No
         for attempt in range(MAX_RETRIES):
             try:
                 response = client.chat.completions.create(**kwargs)
-                _mark_key_success(provider, current_key)
                 return response
             except Exception as e:
                 error_msg = str(e)
@@ -149,15 +114,12 @@ def llm_completion(messages, temperature=0.0, max_tokens=500, response_format=No
                     print(f"  [Rate limit] Key #{key_idx + 1} attempt {attempt + 1}: waiting {wait_time}s...")
                     time.sleep(wait_time)
                 else:
-                    # Non-rate-limit error, don't retry this key
                     break
         
-        # This key exhausted, mark failure and rotate
-        _mark_key_failure(provider, current_key)
-        next_key = _rotate_key(provider)
-        if next_key:
-            key_idx = _key_indices[provider]
-            continue
-        break
+        # Rate limit exhausted for this key, rotate to next
+        key_idx = (key_idx + 1) % len(keys)
+        _key_indices[provider] = key_idx
+        if key_idx != _key_indices[provider]:
+            print(f"  [Key rotation] {provider}: switched to key #{key_idx + 1}")
 
     raise Exception(f"All {provider} API keys exhausted (rate limits or errors)")
