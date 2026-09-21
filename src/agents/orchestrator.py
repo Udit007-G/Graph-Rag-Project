@@ -1,6 +1,7 @@
 """Agentic orchestrator with plan-execute-evaluate-replan loop."""
 import json
 import re
+import time
 from typing import Dict, List, Optional
 from config.settings import get_openai_client, get_model_name, MAX_STEPS, llm_completion
 from src.agents.state import InvestigationState, Action, Evidence
@@ -421,8 +422,11 @@ def _execute_temporal(question: str, state: InvestigationState, client) -> None:
 
 # ─── Action Dispatcher ──────────────────────────────────────────────────────
 
-def execute_action(action: str, question: str, state: InvestigationState, client) -> None:
-    """Execute a single investigation action."""
+def execute_action(action: str, question: str, state: InvestigationState, client) -> Dict:
+    """Execute a single investigation action with timing."""
+    start_time = time.time()
+    tokens_before = state.get_total_tokens()
+    
     if action == "entity_link":
         _execute_entity_link(question, state, client)
     elif action == "graph_traverse":
@@ -435,6 +439,17 @@ def execute_action(action: str, question: str, state: InvestigationState, client
         _execute_temporal(question, state, client)
     elif action == "document_retrieve":
         _execute_similarity_search(question, state, client)
+    
+    duration_ms = int((time.time() - start_time) * 1000)
+    tokens_used = state.get_total_tokens() - tokens_before
+    
+    return {
+        "action": action,
+        "duration_ms": duration_ms,
+        "tokens_used": tokens_used,
+        "evidence_count": len(state.evidence),
+        "visited_docs": len(state.visited_doc_ids)
+    }
 
 
 # ─── Main Agentic Loop ─────────────────────────────────────────────────────
@@ -471,6 +486,8 @@ def run_investigation(question: str, client, is_agentic: bool = True) -> Dict:
         else:
             action_sequence = ["entity_link", "graph_traverse", "similarity_search", "synthesize_answer"]
 
+        step_metrics = []
+
         for step_num in range(state.max_steps):
             state.step_count = step_num
 
@@ -487,7 +504,8 @@ def run_investigation(question: str, client, is_agentic: bool = True) -> Dict:
             if is_sufficient or next_action == "synthesize_answer" or step_num >= state.max_steps - 1:
                 break
 
-            execute_action(next_action, question, state, client)
+            step_result = execute_action(next_action, question, state, client)
+            step_metrics.append(step_result)
             executed_actions.add(next_action)
 
             if state.has_sufficient_evidence():
@@ -518,6 +536,9 @@ def run_investigation(question: str, client, is_agentic: bool = True) -> Dict:
     state.final_answer = final_answer
     state.is_complete = True
 
+    total_time_ms = sum(s.get("duration_ms", 0) for s in step_metrics)
+    total_step_tokens = sum(s.get("tokens_used", 0) for s in step_metrics)
+
     return {
         "question": state.original_question,
         "answer": final_answer,
@@ -527,4 +548,7 @@ def run_investigation(question: str, client, is_agentic: bool = True) -> Dict:
         "token_usage": state.token_usage,
         "actions": state.actions_taken,
         "visited_docs": len(state.visited_doc_ids),
+        "step_metrics": step_metrics,
+        "total_time_ms": total_time_ms,
+        "step_tokens": total_step_tokens,
     }
