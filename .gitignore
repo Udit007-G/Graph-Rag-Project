@@ -1,0 +1,43 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.results/
+*.egg
+.venv/
+venv/
+node_modules/
+.DS_Store
+Thumbs.db
+
+# Unnecessary test files
+test_debug*.py
+test_bench*.py
+test_broad*.py
+test_biathlon.py
+test_docs.py
+test_gemini.py
+test_imports.py
+test_llm.py
+test_local.py
+test_lookup*.py
+test_pipeline.py
+test_rag_detail.py
+test_single.py
+test_structured.py
+test_venue.py
+test_5q.py
+
+# Redundant scripts
+run_bench2.py
+run_full_benchmark.py
+setup.py
+
+# Reference repo (not our code)
+official-graphrag/
+
+# Results (generated)
+results/
