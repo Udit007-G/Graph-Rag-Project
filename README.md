@@ -112,7 +112,7 @@ Tracked: steps, methods, agents, time/step, tokens/step, total tokens, evidence 
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # Add LLM API keys
+cp .env.example .env   # Add LLM API keys (comma-separated for auto-rotation)
 
 # Single question demo
 python test_quick.py
@@ -123,6 +123,14 @@ python main.py --mode benchmark
 # View dashboard locally
 open results/dashboard.html
 ```
+
+### Multi-API Key Fallback
+Add multiple keys (comma-separated) to `.env` for automatic rotation on rate limits:
+```bash
+GROQ_API_KEY=key1,key2,key3
+GEMINI_API_KEY=key1,key2
+```
+System retries with backoff, then rotates to next key automatically.
 
 ### Optional: TigerGraph Savanna
 Add to `.env`:
