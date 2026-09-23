@@ -29,7 +29,7 @@ MAX_STEPS = 6
 MAX_TOKENS_PER_QUERY = 4000
 TEMPERATURE = 0.0
 MAX_RETRIES = 3
-RETRY_DELAY = 10
+RETRY_DELAY = 15  # Increased for rate limit handling
 
 _key_indices = {"groq": 0, "gemini": 0, "openai": 0}
 
@@ -117,9 +117,10 @@ def llm_completion(messages, temperature=0.0, max_tokens=500, response_format=No
                     break
         
         # Rate limit exhausted for this key, rotate to next
+        old_idx = key_idx
         key_idx = (key_idx + 1) % len(keys)
         _key_indices[provider] = key_idx
-        if key_idx != _key_indices[provider]:
+        if key_idx != old_idx:
             print(f"  [Key rotation] {provider}: switched to key #{key_idx + 1}")
 
     raise Exception(f"All {provider} API keys exhausted (rate limits or errors)")
